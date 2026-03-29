@@ -1,0 +1,99 @@
+{
+  "questions": [
+    {
+      "question": "What keyword is used to define a function in Python?",
+      "type": "multiple_choice",
+      "options": ["func", "define", "def", "function"],
+      "answer": "def",
+      "category": "Python Basics"
+    },
+    {
+      "question": "A list in Python is immutable.",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Data Structures"
+    },
+    {
+      "question": "What built-in function returns the number of items in a list?",
+      "type": "short_answer",
+      "answer": "len",
+      "category": "Python Basics"
+    },
+    {
+      "question": "Which of these is NOT a valid Python data type?",
+      "type": "multiple_choice",
+      "options": ["int", "float", "double", "complex"],
+      "answer": "double",
+      "category": "Data Types"
+    },
+    {
+      "question": "Tuples are immutable in Python.",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Data Structures"
+    },
+    {
+      "question": "What is the result of 3 ** 2 in Python?",
+      "type": "short_answer",
+      "answer": "9",
+      "category": "Operators"
+    },
+    {
+      "question": "Which symbol is used for comments in Python?",
+      "type": "multiple_choice",
+      "options": ["//", "#", "/*", "--"],
+      "answer": "#",
+      "category": "Python Basics"
+    },
+    {
+      "question": "Python is a compiled language.",
+      "type": "true_false",
+      "answer": "false",
+      "category": "Python Basics"
+    },
+    {
+      "question": "What function is used to output text to the console?",
+      "type": "short_answer",
+      "answer": "print",
+      "category": "Python Basics"
+    },
+    {
+      "question": "Which of the following is used to handle exceptions in Python?",
+      "type": "multiple_choice",
+      "options": ["try/except", "catch/throw", "try/catch", "error/handle"],
+      "answer": "try/except",
+      "category": "Error Handling"
+    },
+    {
+      "question": "Dictionaries in Python are ordered collections (in Python 3.7+).",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Data Structures"
+    },
+    {
+      "question": "What method adds an element to the end of a list?",
+      "type": "short_answer",
+      "answer": "append",
+      "category": "Data Structures"
+    },
+    {
+      "question": "What does the 'self' keyword represent in a class?",
+      "type": "multiple_choice",
+      "options": ["The class itself", "The current instance of the class", "A static method", "A global variable"],
+      "answer": "The current instance of the class",
+      "category": "Object Oriented Programming"
+    },
+    {
+      "question": "You can use a string as a dictionary key in Python.",
+      "type": "true_false",
+      "answer": "true",
+      "category": "Data Structures"
+    },
+    {
+      "question": "What keyword is used to import a module?",
+      "type": "short_answer",
+      "answer": "import",
+      "category": "Modules"
+    }
+  ]
+}

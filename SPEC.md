@@ -36,3 +36,13 @@ questions.json - stores questions as described in the question session below.
     }
   ]
 }
+
+
+###Checklist
+Running main.py with a missing required file prints an error
+The menu is always visible
+The format of the print statements makes it easy for a person to play
+Someone can figure out how to use the app by just running main.py and nothing else
+People can play and stop seeing questions they dislike
+Scores are tracked and maintained, tied to accounts
+Password are never stored
