@@ -1,0 +1,1 @@
+Darn, looks like I bundled phases 1+2 into one phase as far as my commits show. SPEC.md was written first, and for anything after that, you can just consider what is listed as step n to actually be step n+1
