@@ -1,0 +1,5 @@
+1. It got quite far, but it was missing a couple of things. For instance, the UI was close to what I described, but the menu was off. It also wasn't the best with passwords because it let users make new accounts that would just overwrite old ones.
+2. I had to intervent once to tell it that it shouldn't recommend questions the user disliked. I forgot to add that to the spec, but I told it to have a dislike feature. It made the dislike feature but did nothing with it.
+3. It did catch real bugs, especially the account overwriting was critical and was possible to miss because it occurs in an edge case so I might not have gotten it in a test.
+4. I would add more details and features. I was surprised with how much could get done, so I want to test it more.
+5. If I had to do a big project, then I might consider it but writing a spec is a lot of work compared to just having a chat where you can interact.

@@ -10,8 +10,9 @@ import termios
 import tty
 
 # Configuration
-DB_FILE = 'data.db'
-QUESTIONS_FILE = 'questions.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, 'data.db')
+QUESTIONS_FILE = os.path.join(BASE_DIR, 'questions.json')
 
 ph = PasswordHasher()
 
@@ -29,6 +30,42 @@ def getch():
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+def get_input_with_esc(prompt=""):
+    print(prompt, end='', flush=True)
+    chars = []
+    while True:
+        ch = getch()
+        if ch == 'esc':
+            return 'esc'
+        elif ch in ('\r', '\n'):
+            print()
+            return ''.join(chars)
+        elif ch == '\x7f' or ch == '\b':  # Backspace
+            if chars:
+                chars.pop()
+                print('\b \b', end='', flush=True)
+        elif len(ch) == 1 and ch.isprintable():
+            chars.append(ch)
+            print(ch, end='', flush=True)
+
+def get_password_with_esc(prompt=""):
+    print(prompt, end='', flush=True)
+    chars = []
+    while True:
+        ch = getch()
+        if ch == 'esc':
+            return 'esc'
+        elif ch in ('\r', '\n'):
+            print()
+            return ''.join(chars)
+        elif ch == '\x7f' or ch == '\b':  # Backspace
+            if chars:
+                chars.pop()
+                print('\b \b', end='', flush=True)
+        elif len(ch) == 1 and ch.isprintable():
+            chars.append(ch)
+            print('*', end='', flush=True)
 
 def print_header():
     print("=" * 50)
@@ -54,20 +91,23 @@ def print_menu():
     getch()
 
 def check_files():
-    issues = []
-    if not os.path.exists(DB_FILE):
-        issues.append(f"Database file '{DB_FILE}' is missing.")
-    if not os.path.exists(QUESTIONS_FILE):
-        issues.append(f"Questions file '{QUESTIONS_FILE}' is missing.")
+    missing_db = not os.path.exists(DB_FILE)
+    missing_q = not os.path.exists(QUESTIONS_FILE)
     
-    if issues:
+    if missing_db or missing_q:
         clear_screen()
         print_header()
-        print("ERROR: Application cannot start due to missing files.")
-        for issue in issues:
-            print(f" - {issue}")
-        print("\nPlease make sure these files exist in the current directory.")
-        sys.exit(1)
+        print("INFO: Missing files detected.")
+        if missing_db:
+            print(f" - Database file '{DB_FILE}' is missing. A new one will be created.")
+        if missing_q:
+            print(f" - Questions file '{QUESTIONS_FILE}' is missing.")
+        
+        print("\nPress Enter to continue...")
+        input()
+        
+        if missing_q:
+            sys.exit(1)
 
 def get_db_connection():
     return sqlite3.connect(DB_FILE)
@@ -94,12 +134,19 @@ def login(conn):
         clear_screen()
         print_header()
         print("LOGIN / REGISTER\n")
+        print("(Press ESC at any time to open menu)\n")
         
-        username = input("Username: ").strip()
+        username = get_input_with_esc("Username: ").strip()
+        if username == 'esc':
+            print_menu()
+            continue
         if not username:
             continue
             
-        password = getpass.getpass("Password: ")
+        password = get_password_with_esc("Password: ")
+        if password == 'esc':
+            print_menu()
+            continue
         
         cursor.execute("SELECT password_hash, score FROM users WHERE username = ?", (username,))
         result = cursor.fetchone()
@@ -115,26 +162,28 @@ def login(conn):
                 print("\nIncorrect password.")
                 print("1. Try again")
                 print("2. Create new account")
-                choice = input("Choice: ").strip()
-                if choice == '2':
-                    pass
-                else:
-                    continue
+                choice = get_input_with_esc("Choice: ").strip()
+                if choice == 'esc':
+                    print_menu()
+                continue
         else:
             print("\nUser not found. Creating new account...")
             
-        hashed_password = ph.hash(password)
-        cursor.execute("INSERT OR REPLACE INTO users (username, password_hash, score) VALUES (?, ?, 0)", 
-                      (username, hashed_password))
-        conn.commit()
-        print(f"\nAccount created for {username}!")
-        input("Press Enter to continue...")
-        return username, 0
+            hashed_password = ph.hash(password)
+            cursor.execute("INSERT OR REPLACE INTO users (username, password_hash, score) VALUES (?, ?, 0)", 
+                          (username, hashed_password))
+            conn.commit()
+            print(f"\nAccount created for {username}!")
+            input("Press Enter to continue...")
+            return username, 0
 
 def play_quiz(conn, username, current_score, questions):
     cursor = conn.cursor()
-    streak = 0
     score = current_score
+    if score > 0:
+        streak = int(round((score - 1) ** 0.5))
+    else:
+        streak = 0
     
     cursor.execute("SELECT topic FROM disliked_topics WHERE username = ?", (username,))
     disliked_topics = set(row[0] for row in cursor.fetchall())
@@ -153,6 +202,9 @@ def play_quiz(conn, username, current_score, questions):
         ]
         
         if not available_questions:
+            if not questions:
+                print("\nThere are no questions available in the question bank. Exiting...")
+                sys.exit(1)
             print("\nYou have disliked all available questions! Resetting preferences so you can keep playing.")
             disliked_topics.clear()
             disliked_types.clear()
@@ -186,11 +238,15 @@ def play_quiz(conn, username, current_score, questions):
                 ch = getch()
                 if ch == 'esc':
                     print_menu()
-                    # We just re-loop from the start, skipping answering this round
-                    # and pulling a new question (which is fine). 
-                    # If we wanted to keep the same question, we could just clear_screen and redraw
-                    # but continuing the loop does that.
-                    break
+                    clear_screen()
+                    print_header()
+                    print(f"Category: {topic}")
+                    print(f"User: {username} | Score: {score} | Streak: {streak}")
+                    print("-" * 50)
+                    print(f"\nQuestion: {q_text}\n")
+                    for i, opt in enumerate(options, 1):
+                        print(f"{i}. {opt}")
+                    print("\nPress 1-9 to select (or ESC for menu):")
                 elif ch.isdigit() and 1 <= int(ch) <= len(options):
                     idx = int(ch) - 1
                     user_answer = options[idx]
@@ -211,7 +267,15 @@ def play_quiz(conn, username, current_score, questions):
                 ch = getch()
                 if ch == 'esc':
                     print_menu()
-                    break
+                    clear_screen()
+                    print_header()
+                    print(f"Category: {topic}")
+                    print(f"User: {username} | Score: {score} | Streak: {streak}")
+                    print("-" * 50)
+                    print(f"\nQuestion: {q_text}\n")
+                    print("1. True")
+                    print("2. False")
+                    print("\nPress 1 or 2 (or ESC for menu):")
                 elif ch == '1':
                     user_answer = 'true'
                     is_correct = (user_answer.lower() == str(q.get('answer')).lower())
@@ -227,26 +291,33 @@ def play_quiz(conn, username, current_score, questions):
                 continue
             
         elif q_type == 'short_answer':
-            print("Type your answer and press Enter (or type ':menu' for menu):")
-            ans = input("> ").strip()
-            if ans == ':menu':
-                print_menu()
-                continue
-                
-            user_answer = ans
-            is_correct = (user_answer.lower() == str(q.get('answer')).lower())
+            print("Type your answer and press Enter (or press ESC for menu):")
+            while True:
+                ans = get_input_with_esc("> ").strip()
+                if ans == 'esc':
+                    print_menu()
+                    clear_screen()
+                    print_header()
+                    print(f"Category: {topic}")
+                    print(f"User: {username} | Score: {score} | Streak: {streak}")
+                    print("-" * 50)
+                    print(f"\nQuestion: {q_text}\n")
+                    print("Type your answer and press Enter (or press ESC for menu):")
+                else:
+                    user_answer = ans
+                    is_correct = (user_answer.lower() == str(q.get('answer')).lower())
+                    break
             
-        points = 0
         if is_correct:
             streak += 1
-            points = 1 + (streak ** 2)
-            score += points
+            score = 1 + (streak ** 2)
             print(f"\nCORRECT! The answer was {q.get('answer')}.")
-            print(f"You earned {points} points.")
+            print(f"Your score is now {score}.")
         else:
             streak = 0
+            score = 1 + (streak ** 2)
             print(f"\nINCORRECT. The correct answer was: {q.get('answer')}")
-            print("Streak reset to 0.")
+            print("Streak reset to 0. Score is now 1.")
             
         print(f"Current Score: {score}")
         
@@ -258,7 +329,8 @@ def play_quiz(conn, username, current_score, questions):
         print("2 - Disliked topic")
         print("3 - Disliked type")
         print("4 - Disliked both")
-        print("ESC - Quit")
+        print("ESC - Menu")
+        print("Q - Quit")
         
         while True:
             ch = getch()
@@ -274,6 +346,17 @@ def play_quiz(conn, username, current_score, questions):
                 conn.commit()
                 break
             elif ch == 'esc':
+                print_menu()
+                clear_screen()
+                print_header()
+                print("\nFeedback:")
+                print("1 - Good question")
+                print("2 - Disliked topic")
+                print("3 - Disliked type")
+                print("4 - Disliked both")
+                print("ESC - Menu")
+                print("Q - Quit")
+            elif ch.lower() == 'q':
                 return
 
 def main():
@@ -282,11 +365,16 @@ def main():
     
     check_files()
     
-    print("Press esc to open menu or any other key to start")
-    ch = getch()
-    if ch == 'esc':
-        print_menu()
-        
+    while True:
+        clear_screen()
+        print_header()
+        print("Press esc to open menu or any other key to start")
+        ch = getch()
+        if ch == 'esc':
+            print_menu()
+        else:
+            break
+            
     db_conn = get_db_connection()
     questions = load_questions()
     
